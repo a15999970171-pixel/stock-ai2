@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Quant & Media Dashboard - Trinity Matrix Pro</title>
+    <style>
+        :root { --primary: #00f0ff; --secondary: #7000ff; --bg: #020617; --glass: rgba(15, 23, 42, 0.85); --border: rgba(0, 240, 255, 0.3); --danger: #ef4444; --text: #e2e8f0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Consolas', 'Monaco', 'PingFang SC', sans-serif; }
+        
+        /* 移动端细滚动条重置 */
+        * { scrollbar-width: thin; scrollbar-color: rgba(0, 240, 255, 0.2) transparent; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-thumb { background-color: rgba(0, 240, 255, 0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+
+        body { background-color: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; display: flex; justify-content: center; padding: 20px; }
+        .cyber-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #020617 100%); }
+        .cyber-bg::before { content: ""; position: absolute; width: 200%; height: 200%; top: -50%; left: -50%; background-image: linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px); background-size: 40px 40px; transform: perspective(500px) rotateX(60deg); animation: grid-move 10s linear infinite; }
+        @keyframes grid-move { from { background-position: 0 0; } to { background-position: 0 40px; } }
+        
+        .app-container { display: flex; width: 100%; max-width: 1400px; gap: 20px; align-items: flex-start; }
+        
+        /* 左侧边栏 */
+        .sidebar { width: 280px; flex-shrink: 0; background: var(--glass); backdrop-filter: blur(15px); border: 1px solid var(--border); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; height: calc(100vh - 40px); position: sticky; top: 20px; box-shadow: 0 0 30px rgba(0, 0, 0, 0.5); z-index: 10; }
+        .btn-new-chat { width: 100%; padding: 12px; background: rgba(0, 240, 255, 0.1); border: 1px solid var(--primary); border-radius: 8px; color: var(--primary); font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; flex-shrink: 0; }
+        .btn-new-chat:hover { background: var(--primary); color: #000; box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); }
+        .gems-header { display: flex; justify-content: space-between; align-items: center; color: var(--secondary); font-size: 13px; font-weight: bold; margin-bottom: 10px; padding: 0 5px; flex-shrink: 0; }
+        .btn-add-gem { background: transparent; border: none; color: var(--secondary); font-size: 18px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+        .btn-add-gem:hover { color: #fff; text-shadow: 0 0 8px var(--secondary); }
+        .gems-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; flex-shrink: 0; max-height: 180px; overflow-y: auto; padding-right: 5px; }
+        .gem-item { background: rgba(112, 0, 255, 0.05); border: 1px solid rgba(112, 0, 255, 0.3); border-radius: 8px; padding: 12px; cursor: pointer; font-size: 13px; color: #cbd5e1; transition: all 0.3s ease; display: flex; align-items: center; justify-content: space-between; }
+        .gem-item:hover { background: rgba(112, 0, 255, 0.2); border-color: var(--primary); color: #fff; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); transform: translateX(2px); }
+        
+        .mobile-session-header { display: none; }
+        
+        .session-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 5px; }
+        .session-item { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: flex-start; transition: 0.2s; }
+        .session-item:hover { border-color: var(--primary); background: rgba(0, 240, 255, 0.05); }
+        .session-item.active { border-color: var(--primary); background: rgba(0, 240, 255, 0.1); border-left: 4px solid var(--primary); }
+        .session-preview-box { background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 8px; margin-top: 6px; font-size: 12px; color: #94a3b8; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; transition: 0.2s; }
+        .session-item.active .session-preview-box { border-color: rgba(0, 240, 255, 0.3); color: #fff; }
+        .btn-del-session { background: transparent; border: none; color: #64748b; cursor: pointer; font-size: 16px; padding: 4px; border-radius: 4px; transition: 0.2s; display: flex; align-items: center; justify-content: center; align-self: center; }
+        .btn-del-session:hover { color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+        
+        /* 导航与框架 */
+        .main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; gap: 20px; }
+        .seedacen-nav { display: flex; gap: 10px; border-bottom: 1px solid var(--border); padding-bottom: 5px; flex-shrink: 0; }
+        .nav-tab { padding: 12px 24px; cursor: pointer; font-size: 14px; font-weight: bold; color: #64748b; border-radius: 8px 8px 0 0; transition: 0.3s; border: 1px solid transparent; border-bottom: none; position: relative; }
+        .nav-tab:hover { color: var(--primary); background: rgba(0, 240, 255, 0.03); }
+        .nav-tab.active { color: var(--primary); background: rgba(15, 23, 42, 0.6); border-color: var(--border); text-shadow: 0 0 10px var(--primary); }
+        .nav-tab.active::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background: var(--primary); box-shadow: 0 -2px 10px var(--primary); }
+        .tab-content { display: none; width: 100%; flex-direction: column; gap: 20px; }
+        .tab-content.active { display: flex; }
+
+        .container, .box-container { width: 100%; background: var(--glass); backdrop-filter: blur(15px); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 0 30px rgba(0, 0, 0, 0.5); }
+        .container { padding: 25px 30px; }
+        h1 { font-size: 1.5rem; color: var(--primary); text-align: center; margin-bottom: 20px; letter-spacing: 2px; text-shadow: 0 0 10px var(--primary); }
+        h2 { font-size: 1.2rem; text-align: left; margin-bottom: 15px; color: var(--secondary); text-shadow: 0 0 8px rgba(112,0,255,0.4); }
+        
+        .config-group { margin-bottom: 15px; } .config-group label { display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; }
+        .input-row { display: flex; gap: 10px; } 
+        .config-group input, .config-group select { flex: 1; background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border); border-radius: 6px; padding: 10px 15px; color: #fff; font-size: 14px; outline: none; transition: 0.3s; }
+        .config-group select { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='%2300f0ff'><path d='M0 0h10L5 6z'/></svg>"); background-repeat: no-repeat; background-position: right 15px center; }
+        .config-group input:focus, .config-group select:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(0, 240, 255, 0.2); }
+        .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 20px 0; }
+        .btn-delete { background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); border-radius: 6px; color: var(--danger); width: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; font-size: 16px; }
+        .btn-delete:hover { background: var(--danger); color: #fff; }
+        .btn-add { width: 100%; padding: 10px; background: rgba(0, 240, 255, 0.05); border: 1px dashed var(--primary); border-radius: 6px; color: var(--primary); font-size: 14px; cursor: pointer; transition: 0.3s; margin-bottom: 10px; }
+        .btn-add:hover { background: rgba(0, 240, 255, 0.15); }
+        
+        .box-container { background: rgba(0,0,0,0.6); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .box-header { background: rgba(255, 255, 255, 0.05); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .box-title { font-size: 13px; color: var(--primary); font-weight: bold; } .query-title { color: #f59e0b; }
+        .controls { display: flex; gap: 8px; } .control-btn { width: 26px; height: 26px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: 0.2s; }
+        .control-btn:hover { background: rgba(255,255,255,0.2); }
+        textarea { width: 100%; height: 120px; background: transparent; border: none; color: #fff; padding: 15px; font-size: 15px; line-height: 1.6; resize: none; outline: none; }
+        
+        .output-area { height: 420px; padding: 20px; overflow-y: auto; font-size: 15px; line-height: 1.7; background: rgba(0, 0, 0, 0.7); }
+        .msg-user { color: #f59e0b; font-weight: bold; margin-top: 15px; margin-bottom: 10px; border-left: 3px solid #f59e0b; padding-left: 10px; }
+        .msg-ai { color: #ffffff; text-shadow: 0 0 8px rgba(0, 240, 255, 0.4); background: rgba(15, 23, 42, 0.7); padding: 16px; border-radius: 8px; border-left: 3px solid var(--primary); margin-bottom: 20px; white-space: pre-wrap; word-break: break-all; }
+        .msg-ai img { max-width: 100%; border-radius: 8px; margin-top: 12px; border: 1px solid var(--primary); box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); display: block; }
+        .msg-error { color: #ef4444; font-weight: bold; margin-bottom: 20px; background: rgba(239, 68, 68, 0.1); padding: 10px; border-radius: 6px; }
+        
+        .btn-run { width: 100%; padding: 15px; background: linear-gradient(90deg, var(--secondary), var(--primary)); border: none; border-radius: 10px; color: #fff; font-size: 16px; font-weight: bold; cursor: pointer; letter-spacing: 2px; transition: 0.3s; }
+        .btn-run:hover { filter: brightness(1.2); box-shadow: 0 0 20px var(--primary); }
+        
+        .btn-log-toggle { position: fixed; bottom: 20px; right: 20px; z-index: 1000; padding: 12px 20px; background: rgba(15, 23, 42, 0.9); border: 1px solid var(--primary); border-radius: 8px; color: var(--primary); font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); }
+        .btn-log-toggle:hover { background: var(--primary); color: #000; box-shadow: 0 0 25px rgba(0, 240, 255, 0.6); }
+        .log-panel { position: fixed; bottom: 70px; right: 20px; width: 450px; height: 350px; background: rgba(5, 9, 20, 0.95); border: 1px solid var(--border); border-radius: 12px; z-index: 999; display: flex; flex-direction: column; transform: translateY(120%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 30px rgba(0,0,0,0.8); visibility: hidden; }
+        .log-panel.show { transform: translateY(0); visibility: visible; }
+        .log-panel-header { padding: 10px 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; color: var(--primary); font-size: 13px; font-weight: bold; }
+        .log-panel-content { flex: 1; overflow-y: auto; padding: 15px; font-family: monospace; font-size: 12px; color: #10b981; line-height: 1.5; }
+        .log-entry { margin-bottom: 6px; border-bottom: 1px dashed rgba(16, 185, 129, 0.2); padding-bottom: 4px; } .log-entry.error { color: var(--danger); } .log-entry.warn { color: #f59e0b; }
+        .box-container.fullscreen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; max-width: 100vw; z-index: 9999; border-radius: 0; margin: 0; } .box-container.fullscreen textarea { height: calc(100vh - 120px); font-size: 18px; }
+        
+        .fancy-upload-bar { display: flex; align-items: center; gap: 10px; padding: 8px 15px; background: rgba(0,0,0,0.3); border-bottom: 1px solid var(--border); }
+        .btn-fancy-upload { display: flex; align-items: center; gap: 6px; background: rgba(112,0,255,0.15); border: 1px dashed var(--secondary); padding: 6px 12px; border-radius: 6px; color: #fff; font-size: 12px; cursor: pointer; transition: 0.2s; }
+        .btn-fancy-upload:hover { background: rgba(112,0,255,0.3); border-color: var(--primary); text-shadow: 0 0 5px var(--primary); }
+        
+        .asset-pills-pool { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 15px; background: rgba(0,0,0,0.1); min-height: 40px; }
+        .asset-pill { display: flex; align-items: center; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(112,0,255,0.4); border-radius: 20px; padding: 3px 4px 3px 8px; font-size: 12px; color: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.5); transition: 0.2s; }
+        .asset-pill:hover { border-color: var(--secondary); box-shadow: 0 2px 12px rgba(112,0,255,0.3); }
+        .asset-pill-icon { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; overflow: hidden; margin-right: 6px; background: #000; border: 1px solid rgba(255,255,255,0.1); }
+        .asset-pill-icon img { width: 100%; height: 100%; object-fit: cover; }
+        .asset-pill-name { display: flex; align-items: center; gap: 2px; }
+        .asset-pill-name span { color: var(--secondary); font-weight: bold; }
+        .asset-pill-name input { background: transparent; border: none; outline: none; color: #fff; font-size: 12px; width: 60px; border-bottom: 1px dashed rgba(255,255,255,0.3); padding-bottom: 1px; transition: 0.2s; }
+        .asset-pill-name input:focus { border-color: var(--primary); width: 90px; }
+        .asset-pill-btn-del { background: transparent; border: none; color: #ef4444; font-size: 14px; margin-left: 6px; cursor: pointer; padding: 0 4px; opacity: 0.7; }
+        .asset-pill-btn-del:hover { opacity: 1; }
+
+        .mention-menu { display: none; position: absolute; background: rgba(15, 23, 42, 0.98); border: 1px solid var(--secondary); border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,0.9); z-index: 100; max-height: 180px; overflow-y: auto; width: 250px; top: 30px; left: 15px; }
+        .mention-menu.show { display: block; }
+        .mention-item { padding: 8px 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); color: #cbd5e1; font-size: 12px; }
+        .mention-item:hover, .mention-item.selected { background: rgba(112, 0, 255, 0.3); color: #fff; }
+        .mention-icon { width: 22px; height: 22px; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #000; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
+        .mention-icon img { width: 100%; height: 100%; object-fit: cover; }
+        .textarea-wrapper { position: relative; width: 100%; }
+
+        .multimodal-manifest { display: flex; flex-direction: column; gap: 8px; padding: 12px 15px; background: rgba(0, 240, 255, 0.03); border-top: 1px dashed var(--border); font-size: 12px; }
+        .manifest-title { font-weight: bold; color: var(--primary); display: flex; align-items: center; gap: 5px; }
+        .manifest-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 5px; }
+        .manifest-card { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 6px 10px; display: flex; align-items: center; gap: 8px; overflow: hidden; }
+        
+        .manifest-card span { color: #94a3b8; font-weight: bold; display: flex; align-items: center; min-width: 105px; flex-shrink: 0; }
+        .manifest-icon { font-style: normal; display: inline-block; width: 24px; text-align: left; margin-right: 2px; }
+        .manifest-card p { color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+        .manifest-thumb { width: 20px; height: 20px; border-radius: 3px; object-fit: cover; border: 1px solid rgba(255,255,255,0.2); }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); z-index: 2000; display: none; justify-content: center; align-items: center; }
+        .modal-overlay.show { display: flex; }
+        .modal-box { background: rgba(5, 9, 20, 0.98); border: 1px solid var(--secondary); border-radius: 12px; width: 500px; max-width: 90%; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; color: var(--secondary); font-size: 16px; font-weight: bold; border-bottom: 1px solid rgba(112,0,255,0.3); padding-bottom: 10px; }
+        .modal-close { background: transparent; border: none; color: #64748b; font-size: 20px; cursor: pointer; }
+
+        .btn-global-import { position: fixed; top: 20px; right: 20px; z-index: 1000; padding: 10px 18px; background: rgba(112, 0, 255, 0.15); border: 1px solid var(--secondary); border-radius: 8px; color: #fff; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 0 15px rgba(112, 0, 255, 0.3); display: flex; align-items: center; gap: 6px; }
+        .btn-global-import:hover { background: var(--secondary); box-shadow: 0 0 25px rgba(112, 0, 255, 0.8); text-shadow: 0 0 5px #fff; }
+
+        .btn-mobile-export { display: none; }
+
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .app-container { flex-direction: column; gap: 15px; }
+            
+            .sidebar { width: 100%; height: auto; position: relative; top: 0; border-radius: 12px; padding: 15px; box-shadow: none; z-index: 1; display: flex; flex-direction: column; }
+            .btn-new-chat { order: 1; margin-bottom: 10px; padding: 14px; font-size: 15px; }
+            .mobile-session-header { order: 2; display: block; color: var(--secondary); font-size: 13px; font-weight: bold; margin-bottom: 8px; margin-top: 5px; }
+            .session-list { order: 3; max-height: 200px; gap: 8px; margin-bottom: 15px; border-bottom: 1px dashed var(--border); padding-bottom: 15px; }
+            .gems-header { order: 4; margin-top: 5px; }
+            .gems-list { order: 5; max-height: 180px; gap: 8px; }
+            .divider { display: none; }
+            
+            .gem-item { padding: 14px 12px; font-size: 14px; }
+            .session-item { padding: 14px 12px; }
+            .btn-del-session { font-size: 18px; padding: 6px; }
+
+            .seedacen-nav { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; padding-bottom: 8px; }
+            .nav-tab { padding: 12px 18px; font-size: 14px; white-space: nowrap; flex-shrink: 0; }
+
+            .container { padding: 15px; border-radius: 12px; }
+            h1 { font-size: 1.2rem; margin-bottom: 15px; }
+            .input-row { flex-direction: column; gap: 12px; }
+            .config-group { margin-bottom: 12px; }
+            .config-group input, .config-group select { padding: 14px 12px; font-size: 14px; }
+            .btn-add { padding: 14px; font-size: 15px; }
+            
+            .box-header { flex-wrap: wrap; gap: 10px; padding: 12px 15px; }
+            .control-btn { width: 34px; height: 34px; font-size: 16px; } 
+
+            textarea { height: 140px; font-size: 14px; padding: 15px; }
+            .btn-run { padding: 16px; font-size: 16px; border-radius: 8px; margin-top: 5px; }
+            
+            .fancy-upload-bar { padding: 12px 10px; flex-wrap: wrap; justify-content: center; gap: 10px; }
+            .btn-fancy-upload { width: 100%; justify-content: center; padding: 14px; font-size: 14px; }
+            .asset-pill { padding: 8px 10px 8px 12px; font-size: 13px; }
+            .asset-pill-icon { width: 26px; height: 26px; }
+            .asset-pill-btn-del { font-size: 18px; padding: 6px 10px; margin-left: 8px; }
+
+            .manifest-grid { grid-template-columns: 1fr; gap: 8px; }
+            
+            .modal-box { padding: 20px 15px; width: 95%; max-height: 90vh; overflow-y: auto; }
+            .modal-body input, .modal-body textarea { padding: 14px; font-size: 14px; }
+            .btn-save-gem { padding: 14px; font-size: 15px; }
+            #gemRunModal .box-container { width: 95% !important; margin: auto; }
+            
+            .mention-menu { width: calc(100vw - 50px); left: 15px; max-height: 220px; }
+            .mention-item { padding: 14px; font-size: 14px; }
+            .mention-icon { width: 30px; height: 30px; }
+
+            .output-area { height: 350px; padding: 15px; font-size: 13px; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+            
+            .btn-mobile-export { display: block; width: 100%; padding: 14px; background: rgba(16, 185, 129, 0.15); border: none; border-top: 1px dashed rgba(16, 185, 129, 0.5); color: #10b981; font-weight: bold; font-size: 14px; cursor: pointer; text-align: center; transition: 0.3s; border-radius: 0 0 16px 16px; margin-top: 0; }
+            .btn-mobile-export:hover, .btn-mobile-export:active { background: #10b981; color: #000; }
+
+            .btn-global-import { top: 10px; right: 10px; font-size: 12px; padding: 8px 12px; z-index: 1002; }
+            .log-panel { width: calc(100vw - 20px); right: 10px; left: 10px; bottom: 65px; height: 350px; z-index: 1001; }
+            .btn-log-toggle { padding: 12px 16px; font-size: 13px; bottom: 10px; right: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="cyber-bg"></div>
+    
+    <button class="btn-global-import" onclick="openImportModal()">
+        <span style="font-size:16px;">⇘</span> 导入API
+    </button>
+
+    <div class="app-container">
+        <div class="sidebar">
+            <button class="btn-new-chat" onclick="createNewSession()"><span>+</span> 新建策略对话</button>
+            <div class="mobile-session-header">✦ 当前对话流 (点击切换/删除)</div>
+            <div class="session-list" id="session-list"></div>
+            <div class="divider" style="margin: 5px 0 10px 0;"></div>
+            <div class="gems-header">
+                <span>✦ My Gems (策略预设)</span>
+                <button class="btn-add-gem" onclick="openGemsModal()" title="新建固定提示词">⊕</button>
+            </div>
+            <div class="gems-list" id="gems-list"></div>
+        </div>
+        
+        <div class="main-content">
+            <div class="seedacen-nav">
+                <div class="nav-tab active" onclick="switchWorkspace('quant-workspace', this)">📊 量化扫描终端</div>
+                <div class="nav-tab" onclick="switchWorkspace('video-workspace', this)">🎬 视频创作矩阵</div>
+                <div class="nav-tab" onclick="switchWorkspace('image-workspace', this)">🖼️ 图像生成矩阵</div>
+            </div>
+
+            <div id="quant-workspace" class="tab-content active">
+                <div class="container">
+                    <h1>Universal Quant Terminal</h1>
+                    <div class="config-group">
+                        <label>✦ 主模型请求地址 (API Endpoint)</label>
+                        <input type="text" id="api-main-url" placeholder="如: https://open.bigmodel.cn/api/paas/v4/chat/completions" oninput="saveConfigToLocal()">
+                    </div>
+                    <div class="input-row">
+                        <div class="config-group" style="flex: 1;">
+                            <label>✦ 模型名称 (必须支持 Vision，如 glm-4v)</label>
+                            <input type="text" id="api-main-model" placeholder="如: glm-4v" oninput="saveConfigToLocal()">
+                        </div>
+                        <div class="config-group" style="flex: 2;">
+                            <label>✦ API 密钥 (Bearer Token)</label>
+                            <input type="password" id="api-main-key" placeholder="在此填入你的 API Key" oninput="saveConfigToLocal()">
+                        </div>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="config-group">
+                        <label>✦ 数据源 / 参考节点 1</label>
+                        <input type="text" class="ref-api-input" placeholder="填入通用 API 或以 http 开头的网址...">
+                    </div>
+                    <div class="config-group">
+                        <label>✦ 数据源 / 参考节点 2</label>
+                        <input type="text" class="ref-api-input" placeholder="填入通用 API 或以 http 开头的网址...">
+                    </div>
+                    <div id="dynamic-nodes-wrapper"></div>
+                    <div class="input-row" style="margin-bottom: -5px;">
+                        <button class="btn-add" style="flex: 1;" onclick="addNode()"><span>+</span> 增加更多参考节点</button>
+                        <button class="btn-add" style="flex: 1; background: rgba(112, 0, 255, 0.15); border: 1px dashed var(--secondary); color: #fff; box-shadow: 0 0 10px rgba(112,0,255,0.2);" onclick="openImportModal()"><span style="font-size:14px;">⇘</span> 一键导入 API 与数据源</button>
+                    </div>
+                </div>
+                <div class="box-container" id="queryContainer">
+                    <div class="box-header">
+                        <span class="box-title query-title">INPUT_QUERY (输入筛选指令)</span>
+                        <div class="controls">
+                            <button class="control-btn" onclick="toggleFullscreen('queryContainer')" title="全屏">⛶</button>
+                            <button class="control-btn" onclick="clearBox('queryArea', 'quant');" title="清空">✕</button>
+                        </div>
+                    </div>
+                    
+                    <div class="fancy-upload-bar">
+                        <input type="file" id="quantMediaUpload" accept="image/*, video/*" multiple style="display: none;" onchange="handleAssetSelect(event, 'quant')">
+                        <div class="btn-fancy-upload" onclick="document.getElementById('quantMediaUpload').click()" title="支持批量载入报表、截图、多张图表进行比对分析">
+                            <span style="font-size:14px;">📎</span> 批量载入多模态数据源
+                        </div>
+                        <div style="font-size:11px; color:#94a3b8; margin-left:5px;" class="desktop-only">💡 提示: 载入后文本中打 <b style="color:var(--primary)">@</b> 即可触发联想补全绑定！</div>
+                    </div>
+                    <div class="asset-pills-pool" id="quant-assets-pool"></div>
+
+                    <div class="textarea-wrapper">
+                        <textarea id="queryArea" oninput="syncQuantManifest()" placeholder="输入量化指令... 打个 @ 可融合上方载入的图片/报表进行联邦多模态推演..."></textarea>
+                        <div id="quantMentionMenu" class="mention-menu"></div>
+                    </div>
+
+                    <div class="multimodal-manifest">
+                        <div class="manifest-title">⚡ SCANNER CONTEXT (当前量化策略联邦全量输入清单)</div>
+                        <div class="manifest-grid" id="quant-manifest-grid"></div>
+                    </div>
+                </div>
+                <button class="btn-run" onclick="executeCommand()">执行扫描策略 / RUN SCANNER</button>
+                
+                <div class="box-container" id="resContainer">
+                    <div class="box-header">
+                        <span class="box-title">FINAL_OUTPUT (分析报告)</span>
+                        <div class="controls">
+                            <button class="control-btn" onclick="exportReport()" title="导出分析报告 (支持图文保留)">💾</button>
+                        </div>
+                    </div>
+                    <div class="output-area" id="output-area"></div>
+                </div>
+            </div>
+
+            <div id="video-workspace" class="tab-content">
+                <div class="container">
+                    <h1>Video Generator Pipeline</h1>
+                    <div class="config-group">
+                        <label>✦ 媒体生成端点 (API Endpoint)</label>
+                        <input type="text" id="api-video-url" placeholder="如: https://api.x.ai/v1/images/generations" oninput="saveConfigToLocal()">
+                    </div>
+                    <div class="input-row">
+                        <div class="config-group" style="flex: 1;">
+                            <label>✦ 视频/图像模型代号 (Model ID)</label>
+                            <input type="text" id="api-video-model" placeholder="如: grok-imagine-image-quality" oninput="saveConfigToLocal()">
+                        </div>
+                        <div class="config-group" style="flex: 2;">
+                            <label>✦ 专属验证密钥 (为空则复用主模型 Key)</label>
+                            <input type="password" id="api-video-key" placeholder="在此填入独立 Key" oninput="saveConfigToLocal()">
+                        </div>
+                    </div>
+                    
+                    <div class="divider"></div>
+                    <h2>Resolution & Canvas Parameters</h2>
+                    <div class="input-row" style="margin-top:5px;">
+                        <div class="config-group" style="flex: 1;">
+                            <label>✦ 画面比例 (Aspect Ratio)</label>
+                            <select id="video-aspect-ratio" onchange="syncVideoManifest()">
+                                <option value="16:9">16:9 宽屏 (默认)</option>
+                                <option value="9:16">9:16 竖屏 (短视频)</option>
+                                <option value="1:1">1:1 正方形</option>
+                                <option value="4:3">4:3 传统</option>
+                                <option value="auto">auto 智能自适应</option>
+                            </select>
+                        </div>
+                        <div class="config-group" style="flex: 1;">
+                            <label>✦ 视频时长 (Duration)</label>
+                            <select id="video-duration" onchange="syncVideoManifest()">
+                                <option value="6">6 秒输出</option>
+                                <option value="5">5 秒输出</option>
+                                <option value="10">10 秒输出</option>
+                                <option value="15">15 秒输出</option>
+                            </select>
+                        </div>
+                        <div class="config-group" style="flex: 1;">
+                            <label>✦ 分辨率/画质 (Resolution)</label>
+                            <select id="video-quality" onchange="syncVideoManifest()">
+                                <option value="720p">720p HD 高清</option>
+                                <option value="480p">480p SD 标清</option>
+                                <option value="1080p">1080p FHD 全高清</option>
+                                <option value="1k">1K 级</option>
+                                <option value="2k">2K 级</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="box-container" id="videoQueryContainer">
+                    <div class="box-header">
+                        <span class="box-title" style="color:var(--secondary);">VIDEO_PROMPT (多模态分镜流与剧本)</span>
+                        <div class="controls">
+                            <button class="control-btn" onclick="clearBox('videoQueryArea', 'video');" title="清空">✕</button>
+                        </div>
+                    </div>
+                    
+                    <div class="fancy-upload-bar">
+                        <input type="file" id="videoMediaUpload" accept="image/*, video/*, audio/*" multiple style="display: none;" onchange="handleAssetSelect(event, 'video')">
+                        <div class="btn-fancy-upload" onclick="document.getElementById('videoMediaUpload').click()" title="支持多选图片、音轨等进行联邦输出">
+                            <span style="font-size:14px;">📎</span> 批量载入创作资产池
+                        </div>
+                        <div style="font-size:11px; color:#94a3b8; margin-left:5px;" class="desktop-only">💡 提示: 载入后直接在下方剧本里打 <b style="color:var(--secondary)">@</b> 即可召唤并关联资产！</div>
+                    </div>
+                    <div class="asset-pills-pool" id="video-assets-pool"></div>
+
+                    <div class="textarea-wrapper">
+                        <textarea id="videoQueryArea" oninput="syncVideoManifest()" placeholder="用文字描写分镜剧本。打个 @ 即可自动联想绑定导入的素材实体..."></textarea>
+                        <div id="videoMentionMenu" class="mention-menu"></div>
+                    </div>
+
+                    <div class="multimodal-manifest">
+                        <div class="manifest-title">⚡ CREATION CONTEXT (当前创作矩阵多模态联邦全量输出清单)</div>
+                        <div class="manifest-grid" id="video-manifest-grid"></div>
+                    </div>
+                </div>
+                <button class="btn-run" style="background: linear-gradient(90deg, var(--primary), var(--secondary));" onclick="executeVideoGeneration()">渲染并生成媒体 / GENERATE</button>
+                
+                <div class="box-container">
+                    <div class="box-header">
+                        <span class="box-title" style="color:var(--secondary);">CREATION_OUTPUT (渲染播放区)</span>
+                        <div class="controls">
+                            <button class="control-btn" onclick="exportVideo()" title="一键导出生成的视频/媒体文件">💾</button>
+                        </div>
+                    </div>
+                    <div class="output-area" id="video-output-area" style="display: flex; align-items: center; justify-content: center;"><div class="msg-sys">渲染引擎就绪。生成成功的媒体实体将在此处挂载原生播放器。</div></div>
+                    <button class="btn-mobile-export" onclick="exportVideo()">⇘ 一键导出生成的媒体文件</button>
+                </div>
+            </div>
+
+            <div id="image-workspace" class="tab-content">
+                <div class="container">
+                    <h1>Image Generator Pipeline</h1>
+                    <div class="config-group">
+                        <label>✦ 图像生成端点 (API Endpoint)</label>
+                        <input type="text" id="api-image-url" placeholder="如: https://api.x.ai/v1/images/generations" oninput="saveConfigToLocal()">
+                    </div>
+                    <div class="input-row">
+                        <div class="config-group" style="flex: 1;">
+                            <label>✦ 图像模型代号 (Model ID)</label>
+                            <input type="text" id="api-image-model" placeholder="如: dall-e-3 / flux / midjourney" oninput="saveConfigToLocal()">
+                        </div>
+                        <div class="config-group" style="flex: 2;">
+                            <label>✦ 专属验证密钥 (为空则复用主模型 Key)</label>
+                            <input type="password" id="api-image-key" placeholder="在此填入独立 Key" oninput="saveConfigToLocal()">
+                        </div>
+                    </div>
+                    
+                    <div class="divider"></div>
+                    <h2>Canvas & Export Parameters</h2>
+                    <div class="input-row" style="margin-top:5px;">
+                        <div class="config-group" style="flex: 1;">
+                            <label>✦ 画面比例 (Aspect Ratio)</label>
+                            <select id="image-aspect-ratio" onchange="syncImageManifest()">
+                                <option value="1:1">1:1 正方形 (头像/产品)</option>
+                                <option value="16:9">16:9 宽屏 (壁纸/海报)</option>
+                                <option value="9:16">9:16 竖屏 (手机海报)</option>
+                                <option value="4:3">4:3 传统相片</option>
+                                <option value="3:4">3:4 竖版相片</option>
+                            </select>
+                        </div>
+                        <div class="config-group" style="flex: 1;">
+                            <label>✦ 输出格式 (Output Format)</label>
+                            <select id="image-format" onchange="syncImageManifest()">
+                                <option value="PNG">PNG (无损画质)</option>
+                                <option value="JPG">JPG (标准压缩)</option>
+                                <option value="WEBP">WEBP (极速加载)</option>
+                                <option value="GIF">GIF (循环动图生成)</option>
+                            </select>
+                        </div>
+                        <div class="config-group" style="flex: 1;">
+                            <label>✦ 分辨率/画质 (Resolution)</label>
+                            <select id="image-quality" onchange="syncImageManifest()">
+                                <option value="standard">Standard (标准生成)</option>
+                                <option value="hd">HD (高精度细节)</option>
+                                <option value="1024x1024">1024x1024 (通用方形)</option>
+                                <option value="4k">4K (旗舰级生图)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="box-container" id="imageQueryContainer">
+                    <div class="box-header">
+                        <span class="box-title" style="color:var(--secondary);">IMAGE_PROMPT (视觉生图提示词)</span>
+                        <div class="controls">
+                            <button class="control-btn" onclick="clearBox('imageQueryArea', 'image');" title="清空">✕</button>
+                        </div>
+                    </div>
+                    
+                    <div class="fancy-upload-bar">
+                        <input type="file" id="imageMediaUpload" accept="image/*" multiple style="display: none;" onchange="handleAssetSelect(event, 'image')">
+                        <div class="btn-fancy-upload" onclick="document.getElementById('imageMediaUpload').click()" title="支持导入参考垫图 (Image-to-Image)">
+                            <span style="font-size:14px;">📎</span> 载入参考图垫图 (I2I)
+                        </div>
+                        <div style="font-size:11px; color:#94a3b8; margin-left:5px;" class="desktop-only">💡 提示: 载入后在文本中打 <b style="color:var(--secondary)">@</b> 即可关联垫图！</div>
+                    </div>
+                    <div class="asset-pills-pool" id="image-assets-pool"></div>
+
+                    <div class="textarea-wrapper">
+                        <textarea id="imageQueryArea" oninput="syncImageManifest()" placeholder="用文字详细描绘你想要的画面。如需图生图，输入 @ 绑定上方的垫图..."></textarea>
+                        <div id="imageMentionMenu" class="mention-menu"></div>
+                    </div>
+
+                    <div class="multimodal-manifest">
+                        <div class="manifest-title">⚡ IMAGE CONTEXT (图像生成矩阵当前输入清单)</div>
+                        <div class="manifest-grid" id="image-manifest-grid"></div>
+                    </div>
+                </div>
+                <button class="btn-run" style="background: linear-gradient(90deg, #3b82f6, #06b6d4);" onclick="executeImageGeneration()">渲染并导出图像 / GENERATE IMAGE</button>
+                
+                <div class="box-container">
+                    <div class="box-header">
+                        <span class="box-title" style="color:var(--secondary);">IMAGE_OUTPUT (图像输出查看器)</span>
+                        <div class="controls">
+                            <button class="control-btn" onclick="exportImage()" title="一键保存生成的图片/动图">💾</button>
+                        </div>
+                    </div>
+                    <div class="output-area" id="image-output-area" style="display: flex; align-items: center; justify-content: center;"><div class="msg-sys">生图引擎已就绪。生成的视觉图元将在此处挂载渲染。</div></div>
+                    <button class="btn-mobile-export" onclick="exportImage()">⇘ 一键导出图像/动图文件</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <button class="btn-log-toggle" onclick="toggleLog()">[ TERMINAL LOGS ]</button>
+    <div class="log-panel" id="logPanel">
+        <div class="log-panel-header"><span>SYSTEM EXECUTION LOG</span><button class="control-btn btn-close" onclick="toggleLog()">✕</button></div>
+        <div class="log-panel-content" id="logContent"></div>
+    </div>
+
+    <div class="modal-overlay" id="gemModal">
+        <div class="modal-box">
+            <div class="modal-header"><span>新建静态提示词预设 (Gems)</span><button class="control-btn" onclick="closeGemsModal()">✕</button></div>
+            <div class="modal-body">
+                <label>预设标题 / Title</label><input type="text" id="gemTitle" placeholder="如：美股深度清洗规约">
+                <label>核心条件静态注入文本 / Prompt Content</label><textarea id="gemContent" style="height:120px; border:1px solid var(--border); border-radius:6px; background:#000;" placeholder="填入需要锁定的指令..."></textarea>
+                <button class="btn-run" onclick="saveGem()">锁定并注入侧边栏</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="gemRunModal">
+        <div class="box-container" style="width: 800px; max-width: 95%; background: rgba(15, 23, 42, 0.98); border: 1px solid var(--primary); box-shadow: 0 10px 40px rgba(0,240,255,0.3); border-radius: 12px; margin: auto;">
+            <div class="box-header">
+                <span class="box-title query-title" id="runGemTitle" style="color: #f59e0b; display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:16px; filter:drop-shadow(0 0 5px var(--primary));">💎</span> GEM_EXECUTE (策略沙盒执行器)
+                </span>
+                <div class="controls">
+                    <button class="control-btn" onclick="closeGemRunModal()" title="关闭">✕</button>
+                </div>
+            </div>
+            <textarea id="gemRunArea" style="height: 180px; font-size: 15px; border-radius:0;" placeholder="预设指令内容..."></textarea>
+            <button class="btn-run" style="border-radius: 0 0 12px 12px; background: linear-gradient(90deg, #10b981, var(--primary));" onclick="executeGemCommand()">执行当前预设策略 / RUN GEM</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="importModal">
+        <div class="modal-box" style="background: linear-gradient(135deg, rgba(15,23,42,0.98) 0%, rgba(2,6,23,0.98) 100%); border: 1px solid var(--secondary); box-shadow: 0 0 40px rgba(112,0,255,0.3);">
+            <div class="modal-header">
+                <span style="color:var(--primary); display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:18px;">⇘</span> BATCH API IMPORT (批量节点极速注入)
+                </span>
+                <button class="modal-close" onclick="closeImportModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <label style="color:#00f0ff; font-weight:bold;">粘贴目标地址与模型 (回车换行分隔，按顺序自动靶向注入配置框)</label>
+                <div style="font-size:11px; color:#94a3b8; margin-top:-8px; margin-bottom:8px;">
+                    第1行 👉 主模型端点 URL<br>
+                    第2行 👉 主模型名称 (Model ID)<br>
+                    第3行 👉 视频矩阵端点 URL<br>
+                    第4行 👉 图像矩阵端点 URL 🚀<br>
+                    第5行及之后 👉 自动扩容并注入辅助参考节点
+                </div>
+                <textarea id="importArea" style="height: 160px; border-color: rgba(0,240,255,0.3); background: rgba(0,0,0,0.6);" placeholder="https://api.openai.com/v1/chat/completions\ngpt-4o\nhttps://api.x.ai/v1/videos/generations\nhttps://api.x.ai/v1/images/generations\nhttps://api.data1.com/api/v1/..."></textarea>
+                <button class="btn-run" style="background: linear-gradient(90deg, #00f0ff, var(--secondary)); margin-top: 5px;" onclick="executeImport()">解析并极速注入 / PARSE & INJECT</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM 变量
+        const outputArea = document.getElementById('output-area');
+        const logContent = document.getElementById('logContent');
+        const logPanel = document.getElementById('logPanel');
+
+        let sessions = JSON.parse(localStorage.getItem('geek_sessions')) || {};
+        let gems = JSON.parse(localStorage.getItem('geek_gems')) || [];
+        let currentSessionId = null; let chatHistory = [];
+        
+        let currentGeneratedMediaUrl = null; 
+        let currentGeneratedImageUrl = null; // 🚀 图像矩阵专属导出变量
+
+        // 🚀 资产池扩充：新增 image 工作区
+        let assetsMap = { quant: [], video: [], image: [] };
+        let mentionStates = {
+            quant: { active: false, query: '', startIndex: -1, selectedIndex: 0, filtered: [], areaId: 'queryArea', menuId: 'quantMentionMenu' },
+            video: { active: false, query: '', startIndex: -1, selectedIndex: 0, filtered: [], areaId: 'videoQueryArea', menuId: 'videoMentionMenu' },
+            image: { active: false, query: '', startIndex: -1, selectedIndex: 0, filtered: [], areaId: 'imageQueryArea', menuId: 'imageMentionMenu' }
+        };
+
+        window.onload = () => {
+            document.getElementById('api-main-url').value = localStorage.getItem('geek_api_url') || '';
+            document.getElementById('api-main-model').value = localStorage.getItem('geek_api_model') || '';
+            document.getElementById('api-main-key').value = localStorage.getItem('geek_api_key') || '';
+            
+            document.getElementById('api-video-url').value = localStorage.getItem('geek_video_url') || '';
+            document.getElementById('api-video-model').value = localStorage.getItem('geek_video_model') || '';
+            document.getElementById('api-video-key').value = localStorage.getItem('geek_video_key') || '';
+            
+            // 🚀 图像矩阵初始读取
+            document.getElementById('api-image-url').value = localStorage.getItem('geek_image_url') || '';
+            document.getElementById('api-image-model').value = localStorage.getItem('geek_image_model') || '';
+            document.getElementById('api-image-key').value = localStorage.getItem('geek_image_key') || '';
+
+            if(localStorage.getItem('geek_video_aspect')) document.getElementById('video-aspect-ratio').value = localStorage.getItem('geek_video_aspect');
+            if(localStorage.getItem('geek_video_duration')) document.getElementById('video-duration').value = localStorage.getItem('geek_video_duration');
+            if(localStorage.getItem('geek_video_resolution')) document.getElementById('video-quality').value = localStorage.getItem('geek_video_resolution');
+            
+            if(localStorage.getItem('geek_image_aspect')) document.getElementById('image-aspect-ratio').value = localStorage.getItem('geek_image_aspect');
+            if(localStorage.getItem('geek_image_format')) document.getElementById('image-format').value = localStorage.getItem('geek_image_format');
+            if(localStorage.getItem('geek_image_resolution')) document.getElementById('image-quality').value = localStorage.getItem('geek_image_resolution');
+            
+            renderGems(); 
+            renderAssetsPool('quant'); renderAssetsPool('video'); renderAssetsPool('image');
+            initMentionSystem('quant'); initMentionSystem('video'); initMentionSystem('image');
+
+            const sessionIds = Object.keys(sessions);
+            if (sessionIds.length > 0) { 
+                loadSession(sessionIds[sessionIds.length - 1]); 
+            } else { 
+                createNewSession(); 
+            }
+        };
+
+        function saveConfigToLocal() {
+            localStorage.setItem('geek_api_url', document.getElementById('api-main-url').value.trim());
+            localStorage.setItem('geek_api_model', document.getElementById('api-main-model').value.trim());
+            localStorage.setItem('geek_api_key', document.getElementById('api-main-key').value.trim());
+            
+            localStorage.setItem('geek_video_url', document.getElementById('api-video-url').value.trim());
+            localStorage.setItem('geek_video_model', document.getElementById('api-video-model').value.trim());
+            localStorage.setItem('geek_video_key', document.getElementById('api-video-key').value.trim());
+            localStorage.setItem('geek_video_aspect', document.getElementById('video-aspect-ratio').value);
+            localStorage.setItem('geek_video_duration', document.getElementById('video-duration').value);
+            localStorage.setItem('geek_video_resolution', document.getElementById('video-quality').value);
+
+            localStorage.setItem('geek_image_url', document.getElementById('api-image-url').value.trim());
+            localStorage.setItem('geek_image_model', document.getElementById('api-image-model').value.trim());
+            localStorage.setItem('geek_image_key', document.getElementById('api-image-key').value.trim());
+            localStorage.setItem('geek_image_aspect', document.getElementById('image-aspect-ratio').value);
+            localStorage.setItem('geek_image_format', document.getElementById('image-format').value);
+            localStorage.setItem('geek_image_resolution', document.getElementById('image-quality').value);
+        }
+
+        function switchWorkspace(targetId, tabElement) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+            document.getElementById(targetId).classList.add('active');
+            if(tabElement) tabElement.classList.add('active');
+            appendSysLog(`无缝切流至: ${targetId}`);
+        }
+
+        function toggleLog() { logPanel.classList.toggle('show'); }
+        function appendSysLog(text, type = 'info') {
+            const entry = document.createElement('div'); entry.className = `log-entry ${type}`;
+            entry.innerText = `[${new Date().toLocaleTimeString()}] > ${text}`;
+            if(logContent) { logContent.appendChild(entry); logContent.scrollTop = logContent.scrollHeight; }
+        }
+
+        function openImportModal() { document.getElementById('importModal').classList.add('show'); }
+        function closeImportModal() { document.getElementById('importModal').classList.remove('show'); document.getElementById('importArea').value = ''; }
+        
+        // 🚀 API 解析适配第 4 行
+        function executeImport() {
+            const importText = document.getElementById('importArea').value;
+            const lines = importText.split('\n').map(l => l.trim()).filter(l => l !== '');
+            if (lines.length === 0) { alert("未检测到任何有效内容！"); return; }
+
+            if (lines[0]) document.getElementById('api-main-url').value = lines[0];
+            if (lines[1]) document.getElementById('api-main-model').value = lines[1];
+            if (lines[2]) document.getElementById('api-video-url').value = lines[2];
+            if (lines[3]) document.getElementById('api-image-url').value = lines[3]; // 图像端点
+
+            if (lines.length > 4) {
+                const wrapper = document.getElementById('dynamic-nodes-wrapper');
+                wrapper.innerHTML = ''; 
+                const existingRefInputs = document.querySelectorAll('.container .ref-api-input'); 
+                
+                for (let i = 4; i < lines.length; i++) {
+                    const nodeIndex = i - 4;
+                    if (nodeIndex < 2) {
+                        existingRefInputs[nodeIndex].value = lines[i];
+                    } else {
+                        addNode();
+                        const newInputs = document.querySelectorAll('.dynamic-node .ref-api-input');
+                        newInputs[newInputs.length - 1].value = lines[i];
+                    }
+                }
+            }
+
+            saveConfigToLocal();
+            closeImportModal();
+            appendSysLog(`✔ 批量导入成功！共解析并挂载了 ${lines.length} 条配置。`);
+        }
+
+        function exportReport() {
+            if (!outputArea || !outputArea.innerHTML.trim()) { alert("当前没有可导出的分析报告内容！"); return; }
+            const reportContent = outputArea.innerHTML;
+            const exportTemplate = `
+            <!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Universal Quant 策略分析报告</title>
+            <style>body { background-color: #020617; color: #e2e8f0; font-family: 'Consolas', 'PingFang SC', sans-serif; padding: 30px; line-height: 1.7; } .msg-user { color: #f59e0b; font-weight: bold; margin-top: 25px; border-left: 4px solid #f59e0b; padding-left: 15px; margin-bottom: 15px; } .msg-ai { background: rgba(15, 23, 42, 0.8); padding: 20px; border-radius: 8px; border-left: 4px solid #00f0ff; margin-bottom: 20px; white-space: pre-wrap; font-size: 15px; } img { max-width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid #00f0ff; display: block; } h1 { color: #00f0ff; text-align: center; border-bottom: 1px solid rgba(0,240,255,0.3); padding-bottom: 15px; text-transform: uppercase; letter-spacing: 2px; } .footer { text-align: center; font-size: 12px; color: #64748b; margin-top: 40px; border-top: 1px dashed #333; padding-top: 15px; }</style>
+            </head><body><h1>Universal Quant 自动化分析报告</h1><div class="report-content">${reportContent}</div><div class="footer">生成时间: ${new Date().toLocaleString()}</div></body></html>`;
+            const blob = new Blob([exportTemplate], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `Quant_Report_${new Date().getTime()}.html`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+            appendSysLog('✔ 分析报告已成功打包！请在弹出的窗口中选择文件夹保存。');
+        }
+
+        function exportVideo() {
+            if (!currentGeneratedMediaUrl) { alert("当前播放区没有检测到任何媒体资产！"); return; }
+            const a = document.createElement('a'); a.href = currentGeneratedMediaUrl; a.target = '_blank';
+            let ext = "mp4"; if (currentGeneratedMediaUrl.includes(".png") || currentGeneratedMediaUrl.includes("image")) ext = "png";
+            a.download = `Quant_Media_Output_${new Date().getTime()}.${ext}`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+
+        // 🚀 新增：图像导出函数
+        function exportImage() {
+            if (!currentGeneratedImageUrl) { alert("当前渲染区没有检测到任何图像资产！"); return; }
+            const a = document.createElement('a'); a.href = currentGeneratedImageUrl; a.target = '_blank';
+            let ext = document.getElementById('image-format').value.toLowerCase() || "png";
+            a.download = `Quant_Image_Output_${new Date().getTime()}.${ext}`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+
+        async function handleAssetSelect(e, scope) {
+            const files = e.target.files; if (!files || files.length === 0) return;
+            appendSysLog(`[${scope}] 正在导入 ${files.length} 个联邦资产...`);
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i]; const fileType = file.type.split('/')[0];
+                await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = async (ev) => {
+                        let base64Data = ev.target.result; let previewSrc = base64Data;
+                        if (fileType === 'video') { try { previewSrc = await extractVideoFrame(file); } catch(err) { previewSrc = ''; } }
+                        const typeCount = assetsMap[scope].filter(a => a.type === fileType).length + 1;
+                        assetsMap[scope].push({ id: 'asset_' + Date.now() + '_' + i, fileName: file.name, type: fileType, base64: base64Data, preview: previewSrc, handle: `${fileType}_${typeCount}` });
+                        resolve();
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+            renderAssetsPool(scope);
+            if(scope === 'quant') syncQuantManifest(); else if(scope === 'video') syncVideoManifest(); else syncImageManifest();
+            e.target.value = ''; 
+        }
+
+        function renderAssetsPool(scope) {
+            const pool = document.getElementById(`${scope}-assets-pool`); pool.innerHTML = '';
+            if (assetsMap[scope].length === 0) { pool.innerHTML = `<span style="font-size:12px; color:#64748b; font-style:italic;">暂无引入资产。点击上方按钮批量载入...</span>`; return; }
+            assetsMap[scope].forEach((asset, index) => {
+                const pill = document.createElement('div'); pill.className = 'asset-pill';
+                let icon = (asset.type === 'image' || asset.type === 'video') ? `<img src="${asset.preview || asset.base64}">` : `<span style="font-size:12px;">🎵</span>`;
+                pill.innerHTML = `<div class="asset-pill-icon">${icon}</div><div class="asset-pill-name"><span>@</span><input type="text" value="${asset.handle}" oninput="updateAssetHandleName('${scope}', ${index}, this.value)"></div><button class="asset-pill-btn-del" onclick="removeAsset('${scope}', ${index})">✕</button>`;
+                pool.appendChild(pill);
+            });
+        }
+
+        function updateAssetHandleName(scope, index, typedValue) {
+            assetsMap[scope][index].handle = typedValue.replace(/[^a-zA-Z0-9_]/g, '');
+            if(scope === 'quant') syncQuantManifest(); else if(scope === 'video') syncVideoManifest(); else syncImageManifest();
+        }
+
+        function removeAsset(scope, index) { 
+            assetsMap[scope].splice(index, 1); renderAssetsPool(scope); 
+            if(scope === 'quant') syncQuantManifest(); else if(scope === 'video') syncVideoManifest(); else syncImageManifest(); 
+        }
+
+        function initMentionSystem(scope) {
+            const state = mentionStates[scope];
+            const area = document.getElementById(state.areaId);
+            const menu = document.getElementById(state.menuId);
+
+            area.addEventListener('input', function() {
+                const cursor = this.selectionStart; const textToCursor = this.value.substring(0, cursor); const match = textToCursor.match(/@([a-zA-Z0-9_]*)$/);
+                if (match && assetsMap[scope].length > 0) {
+                    state.active = true; state.query = match[1].toLowerCase(); state.startIndex = match.index;
+                    state.filtered = assetsMap[scope].filter(a => a.handle.toLowerCase().includes(state.query) || a.fileName.toLowerCase().includes(state.query));
+                    if (state.filtered.length > 0) { renderMentionMenu(scope); } else { closeMenu(); }
+                } else { closeMenu(); }
+            });
+
+            area.addEventListener('keydown', function(e) {
+                if (!state.active || state.filtered.length === 0) return;
+                if (e.key === 'ArrowDown') { e.preventDefault(); state.selectedIndex = (state.selectedIndex + 1) % state.filtered.length; updateSelection(); } 
+                else if (e.key === 'ArrowUp') { e.preventDefault(); state.selectedIndex = (state.selectedIndex - 1 + state.filtered.length) % state.filtered.length; updateSelection(); } 
+                else if (e.key === 'Enter') { e.preventDefault(); injectMention(scope, state.filtered[state.selectedIndex].handle); } 
+                else if (e.key === 'Escape') { closeMenu(); }
+            });
+
+            function renderMentionMenu(scope) {
+                menu.innerHTML = '';
+                state.filtered.forEach((asset, index) => {
+                    const item = document.createElement('div'); item.className = `mention-item ${index === state.selectedIndex ? 'selected' : ''}`;
+                    let icon = (asset.type === 'image' || asset.type === 'video') ? `<img src="${asset.preview || asset.base64}">` : `🎵`;
+                    item.innerHTML = `<div class="mention-icon">${icon}</div><div style="min-width:0;flex:1;"><b style="color:var(--primary)">@${asset.handle}</b><br><small style="color:#64748b;font-size:10px;">${asset.fileName}</small></div>`;
+                    item.onmousedown = (ev) => { ev.preventDefault(); injectMention(scope, asset.handle); };
+                    menu.appendChild(item);
+                });
+                menu.classList.add('show');
+            }
+            function updateSelection() {
+                const items = menu.querySelectorAll('.mention-item');
+                items.forEach((item, idx) => { item.classList.toggle('selected', idx === state.selectedIndex); });
+            }
+            function closeMenu() { state.active = false; state.selectedIndex = 0; menu.classList.remove('show'); }
+        }
+
+        function injectMention(scope, handleName) {
+            const state = mentionStates[scope]; const area = document.getElementById(state.areaId);
+            const text = area.value; const before = text.substring(0, state.startIndex); const after = text.substring(area.selectionStart);
+            const injected = `@${handleName} `; area.value = before + injected + after;
+            area.focus(); area.selectionStart = area.selectionEnd = before.length + injected.length;
+            mentionStates[scope].active = false; document.getElementById(state.menuId).classList.remove('show');
+            if(scope === 'quant') syncQuantManifest(); else if(scope === 'video') syncVideoManifest(); else syncImageManifest();
+        }
+
+        function syncQuantManifest() {
+            saveConfigToLocal(); const query = document.getElementById('queryArea').value;
+            if (currentSessionId && sessions[currentSessionId]) { sessions[currentSessionId].queryText = query; saveToLocal(); renderSidebar(); }
+            const grid = document.getElementById('quant-manifest-grid'); 
+            grid.innerHTML = `<div class="manifest-card"><span><i class="manifest-icon">📝</i>规约指令:</span><p>${query || '(空白)'}</p></div>`;
+            assetsMap.quant.forEach(asset => {
+                if (query.includes(`@${asset.handle}`)) {
+                    let thumb = (asset.type === 'image' || asset.type === 'video') ? `<img class="manifest-thumb" src="${asset.preview || asset.base64}">` : '';
+                    const card = document.createElement('div'); card.className = 'manifest-card';
+                    card.innerHTML = `${thumb}<span><i class="manifest-icon">📊</i>数据载荷:</span><p>@${asset.handle}</p>`; grid.appendChild(card);
+                }
+            });
+        }
+
+        function syncVideoManifest() {
+            saveConfigToLocal(); const prompt = document.getElementById('videoQueryArea').value.trim();
+            const grid = document.getElementById('video-manifest-grid');
+            grid.innerHTML = `<div class="manifest-card"><span><i class="manifest-icon">📝</i>文字剧本:</span><p>${prompt || '(未填写)'}</p></div><div class="manifest-card"><span><i class="manifest-icon">📐</i>画面比例:</span><p>${document.getElementById('video-aspect-ratio').value}</p></div><div class="manifest-card"><span><i class="manifest-icon">⏱️</i>视频时长:</span><p>${document.getElementById('video-duration').value}秒</p></div><div class="manifest-card"><span><i class="manifest-icon">💎</i>输出画质:</span><p>${document.getElementById('video-quality').value}</p></div>`;
+            assetsMap.video.forEach(asset => {
+                if (prompt.includes(`@${asset.handle}`)) {
+                    let thumb = (asset.type === 'image' || asset.type === 'video') ? `<img class="manifest-thumb" src="${asset.preview || asset.base64}">` : '';
+                    const card = document.createElement('div'); card.className = 'manifest-card';
+                    card.innerHTML = `${thumb}<span><i class="manifest-icon">🎨</i>联邦素材:</span><p>@${asset.handle}</p>`; grid.appendChild(card);
+                }
+            });
+        }
+
+        // 🚀 新增：同步图像生图矩阵清单
+        function syncImageManifest() {
+            saveConfigToLocal(); const prompt = document.getElementById('imageQueryArea').value.trim();
+            const grid = document.getElementById('image-manifest-grid');
+            grid.innerHTML = `<div class="manifest-card"><span><i class="manifest-icon">📝</i>画面描述:</span><p>${prompt || '(未填写)'}</p></div><div class="manifest-card"><span><i class="manifest-icon">📐</i>画面比例:</span><p>${document.getElementById('image-aspect-ratio').value}</p></div><div class="manifest-card"><span><i class="manifest-icon">🎞️</i>输出格式:</span><p>${document.getElementById('image-format').value}</p></div><div class="manifest-card"><span><i class="manifest-icon">💎</i>输出画质:</span><p>${document.getElementById('image-quality').value}</p></div>`;
+            assetsMap.image.forEach(asset => {
+                if (prompt.includes(`@${asset.handle}`)) {
+                    let thumb = (asset.type === 'image' || asset.type === 'video') ? `<img class="manifest-thumb" src="${asset.preview || asset.base64}">` : '';
+                    const card = document.createElement('div'); card.className = 'manifest-card';
+                    card.innerHTML = `${thumb}<span><i class="manifest-icon">🖼️</i>参考垫图:</span><p>@${asset.handle}</p>`; grid.appendChild(card);
+                }
+            });
+        }
+
+        function extractVideoFrame(file) {
+            return new Promise((resolve) => {
+                const video = document.createElement('video'); video.autoplay = true; video.muted = true; video.playsInline = true; video.src = URL.createObjectURL(file);
+                video.onloadeddata = () => video.currentTime = 0.3;
+                video.onseeked = () => { const c = document.createElement('canvas'); c.width = video.videoWidth; c.height = video.videoHeight; c.getContext('2d').drawImage(video, 0, 0, c.width, c.height); resolve(c.toDataURL('image/jpeg', 0.8)); };
+            });
+        }
+
+        function openGemsModal() { document.getElementById('gemModal').classList.add('show'); }
+        function closeGemsModal() { document.getElementById('gemModal').classList.remove('show'); }
+        function saveGem() {
+            const name = document.getElementById('gemTitle').value.trim(); const prompt = document.getElementById('gemContent').value.trim();
+            if(!name || !prompt) return; gems.push({ name, prompt }); localStorage.setItem('geek_gems', JSON.stringify(gems)); renderGems(); closeGemsModal();
+        }
+        
+        function renderGems() {
+            const box = document.getElementById('gems-list'); box.innerHTML = '';
+            gems.forEach((g, i) => {
+                const d = document.createElement('div'); d.className = 'gem-item';
+                d.innerHTML = `<div style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:8px;" onclick="applyGem(${i})"><span style="font-size:16px; filter:drop-shadow(0 0 5px var(--primary));">💎</span><span style="font-weight:bold;">${g.name}</span></div><button class="btn-del-session" onclick="deleteGem(event, ${i})">✕</button>`;
+                box.appendChild(d);
+            });
+        }
+        
+        function applyGem(i) { 
+            const gemObj = gems[i]; document.getElementById('runGemTitle').innerHTML = `<span style="font-size:16px; filter:drop-shadow(0 0 5px var(--primary));">💎</span> 策略预设：${gemObj.name}`;
+            document.getElementById('gemRunArea').value = gemObj.prompt; document.getElementById('gemRunModal').classList.add('show'); appendSysLog(`装载预设 [${gemObj.name}]...`); 
+        }
+
+        function closeGemRunModal() { document.getElementById('gemRunModal').classList.remove('show'); }
+        function executeGemCommand() {
+            const gemText = document.getElementById('gemRunArea').value.trim(); if(!gemText) return;
+            switchWorkspace('quant-workspace', document.querySelector('.nav-tab')); document.getElementById('queryArea').value = gemText;
+            syncQuantManifest(); closeGemRunModal(); executeCommand();
+        }
+        function deleteGem(e, i) { e.stopPropagation(); gems.splice(i, 1); localStorage.setItem('geek_gems', JSON.stringify(gems)); renderGems(); }
+
+        function renderSidebar() {
+            const sessionListEl = document.getElementById('session-list'); sessionListEl.innerHTML = ''; const ids = Object.keys(sessions).reverse();
+            ids.forEach(id => {
+                const isActive = (id === currentSessionId); const item = document.createElement('div'); item.className = `session-item ${isActive ? 'active' : ''}`; item.onclick = () => loadSession(id);
+                let previewText = sessions[id].queryText || "";
+                item.innerHTML = `<div style="flex:1; min-width:0; display:flex; flex-direction:column;"><div style="font-size:13px; font-weight:bold; color:${isActive ? '#fff' : '#cbd5e1'};">✦ ${sessions[id].title || '策略层'}</div><div class="session-preview-box">${previewText || '（空白策略，点击输入...）'}</div></div><button class="btn-del-session" onclick="deleteSession(event, '${id}')">✕</button>`;
+                sessionListEl.appendChild(item);
+            });
+        }
+        
+        function createNewSession() { 
+            if (currentSessionId && sessions[currentSessionId]) {
+                const cur = sessions[currentSessionId];
+                if (cur.history && cur.history.length === 0 && (!cur.queryText || cur.queryText.trim() === '')) {
+                    document.getElementById('queryArea').value = ''; syncQuantManifest(); if(outputArea) outputArea.innerHTML = ''; return;
+                }
+            }
+            currentSessionId = 'session_' + Date.now(); chatHistory = []; sessions[currentSessionId] = { title: "新策略层", history: [], queryText: "" }; 
+            document.getElementById('queryArea').value = ''; syncQuantManifest(); saveToLocal(); renderSidebar(); if(outputArea) outputArea.innerHTML = ''; 
+        }
+        
+        loadSession = function(id) {
+            currentSessionId = id; chatHistory = sessions[id].history || []; 
+            document.getElementById('queryArea').value = sessions[id].queryText || ''; syncQuantManifest(); renderSidebar(); if(outputArea) outputArea.innerHTML = '';
+            chatHistory.forEach(m => {
+                let txt = typeof m.content === 'string' ? m.content : m.content.find(t=>t.type==='text')?.text || '';
+                if(txt.includes('用户动态条件：\n')) txt = txt.split('用户动态条件：\n')[1].split('\n\n【辅助节点】')[0];
+                if(outputArea) outputArea.innerHTML += `<div class="${m.role==='user'?'msg-user':'msg-ai'}">${m.role==='user'?'用户提问: ':'助手: '}${txt}</div>`;
+            });
+        }
+        
+        function deleteSession(e, id) { 
+            e.stopPropagation(); delete sessions[id]; saveToLocal(); 
+            if (Object.keys(sessions).length === 0) { createNewSession(); } else {
+                if (id === currentSessionId) { const remainingIds = Object.keys(sessions).reverse(); loadSession(remainingIds[0]); } else { renderSidebar(); }
+            }
+        }
+        function saveToLocal() { localStorage.setItem('geek_sessions', JSON.stringify(sessions)); }
+        
+        function addNode() {
+            const w = document.getElementById('dynamic-nodes-wrapper'); const g = document.createElement('div'); g.className = 'config-group dynamic-node';
+            g.innerHTML = `<label class="dynamic-label">✦ 参考节点</label><div class="input-row"><input type="text" class="ref-api-input" placeholder="填入通用 API 或网址..."><button class="btn-delete" onclick="removeNode(this)">✕</button></div>`;
+            w.appendChild(g);
+        }
+        function removeNode(b) { b.closest('.dynamic-node').remove(); }
+        function clearBox(id, scope) { document.getElementById(id).value = ""; assetsMap[scope] = []; renderAssetsPool(scope); if(scope === 'quant') syncQuantManifest(); else if(scope === 'video') syncVideoManifest(); else syncImageManifest(); }
+        function toggleFullscreen(id) { document.getElementById(id).classList.toggle('fullscreen'); }
+
+        async function executeCommand() {
+            let query = document.getElementById('queryArea').value.trim();
+            const apiUrl = document.getElementById('api-main-url').value.trim(); const apiModel = document.getElementById('api-main-model').value.trim(); const apiKey = document.getElementById('api-main-key').value.trim();
+            if (!query) return; saveConfigToLocal();
+            
+            if (!currentSessionId || !sessions[currentSessionId]) { createNewSession(); }
+            if (sessions[currentSessionId].title === "新策略层") { sessions[currentSessionId].title = query.substring(0, 12) + '...'; saveToLocal(); renderSidebar(); }
+
+            if(outputArea) outputArea.innerHTML += `<div class="msg-user">用户提问: ${query}</div>`; appendSysLog(`正在编译多模态联邦载荷发送给大脑...`);
+
+            try {
+                let boundImages = [];
+                assetsMap.quant.forEach(asset => {
+                    const tag = `@${asset.handle}`;
+                    if (query.includes(tag)) { if (asset.type === 'image' || asset.type === 'video') { boundImages.push(asset.base64); query = query.replace(tag, `[联邦参考载荷: @${asset.handle}]`); } }
+                });
+
+                let combinedRawData = ""; const allNodes = document.querySelectorAll('.ref-api-input'); let dataSourceMeta = "全量数据源";
+                for (let i = 0; i < allNodes.length; i++) {
+                    const nodeValue = allNodes[i].value.trim();
+                    if (nodeValue && (nodeValue.startsWith('http://') || nodeValue.startsWith('https://'))) {
+                        dataSourceMeta = nodeValue.split('?')[0]; const res = await fetch(`${nodeValue}${nodeValue.includes('?')?'&':'?'}_t=${Date.now()}`, { cache: 'no-store' });
+                        if (res.ok) { const txt = await res.text(); combinedRawData += `【节点 ${i + 1}数据】:\n${txt.substring(0, 20000)}\n\n`; }
+                    }
+                }
+
+                const finalPrompt = `【系统指令】：用户请求：\n${query}\n\n【附加数据源】：\n${combinedRawData}\n\n【任务要求】：请直接响应用户请求。如果是量化分析任务，请推演清洗排序；如果是画图或通用问答，请直接执行并返回结果。`;
+                let messageContent = [{ type: "text", text: finalPrompt }];
+                boundImages.forEach(imgData => { messageContent.push({ type: "image_url", image_url: { url: imgData } }); });
+                chatHistory.push({ role: "user", content: messageContent });
+                
+                const response = await fetch(apiUrl, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` }, body: JSON.stringify({ model: apiModel, messages: chatHistory }) });
+                const resultJSON = await response.json(); let aiAnswer = resultJSON.choices[0].message.content;
+
+                aiAnswer = aiAnswer.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width:100%; border-radius:8px; border:1px solid var(--primary); box-shadow:0 0 15px rgba(0,240,255,0.2); margin: 10px 0;">');
+
+                chatHistory.push({ role: "assistant", content: aiAnswer }); sessions[currentSessionId].history = chatHistory; saveToLocal(); renderSidebar();
+                if(outputArea) outputArea.innerHTML += `<div class="msg-ai">${aiAnswer}</div>`;
+            } catch (error) { if(outputArea) outputArea.innerHTML += `<div class="msg-error">[运算终止] ${error.message}</div>`; }
+        }
+
+        // ================= 视频创作引擎 =================
+        async function executeVideoGeneration() {
+            let scriptPrompt = document.getElementById('videoQueryArea').value.trim();
+            let videoUrl = document.getElementById('api-video-url').value.trim() || document.getElementById('api-main-url').value.trim();
+            let videoModel = document.getElementById('api-video-model').value.trim() || document.getElementById('api-main-model').value.trim();
+            let videoKey = document.getElementById('api-video-key').value.trim() || document.getElementById('api-main-key').value.trim();
+            
+            let aspectSetting = document.getElementById('video-aspect-ratio').value;
+            let durationSetting = parseInt(document.getElementById('video-duration').value);
+            let resolutionSetting = document.getElementById('video-quality').value;
+
+            if (!scriptPrompt && assetsMap.video.length === 0) { alert("视频创作提示与资产不能为空！"); return; }
+            if (!videoUrl || !videoModel || !videoKey) { alert("鉴权配置卡槽（Key/Url）缺失！"); return; }
+
+            const vOutput = document.getElementById('video-output-area');
+            vOutput.innerHTML = `<div class="msg-sys" style="color:var(--primary);">>> [多模态联邦] 正在封装视频生成全量载荷...</div>`;
+            appendSysLog(`=== 视频矩阵全量输出启动 ===`);
+
+            try {
+                let boundImages = []; let boundAudios = [];
+                assetsMap.video.forEach(asset => {
+                    const handleTag = `@${asset.handle}`;
+                    if (scriptPrompt.includes(handleTag)) {
+                        if (asset.type === 'image' || asset.type === 'video') { boundImages.push(asset.base64); } 
+                        else if (asset.type === 'audio') { boundAudios.push(asset.base64); }
+                    }
+                });
+
+                let payload = {};
+                if (videoUrl.toLowerCase().includes("image") || videoUrl.toLowerCase().includes("video") || videoUrl.toLowerCase().includes("generation")) {
+                    payload = { model: videoModel, prompt: scriptPrompt, aspect_ratio: aspectSetting, resolution: resolutionSetting };
+                    if (boundImages.length > 0) payload.image_url = boundImages[0];
+                    if (boundAudios.length > 0) payload.audio_url = boundAudios[0];
+                    if (videoUrl.toLowerCase().includes("video") || videoModel.toLowerCase().includes("video")) payload.duration = durationSetting;
+                } else {
+                    payload.model = videoModel;
+                    let mContent = [{ type: "text", text: `【比例】:${aspectSetting} 【时长】:${durationSetting}s 【画质】:${resolutionSetting}\n【剧本】:\n${scriptPrompt}` }];
+                    boundImages.forEach(img => mContent.push({ type: "image_url", image_url: { url: img } }));
+                    payload.messages = [{ role: "user", content: mContent }];
+                }
+
+                const response = await fetch(videoUrl, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${videoKey}` }, body: JSON.stringify(payload) });
+                if (!response.ok) { const errText = await response.text(); throw new Error(`网关异常 状态码: ${response.status} - ${errText.substring(0, 120)}`); }
+                const result = await response.json();
+                
+                let mediaUrlSrc = result.video_url || result.image_url || result.url || (result.video && result.video.url) || (result.data && result.data[0]?.url) || "";
+                if (!mediaUrlSrc && result.choices && result.choices[0]?.message?.content) {
+                    let content = result.choices[0].message.content; let urlMatch = content.match(/https?:\/\/[^\s"']+/); if (urlMatch) mediaUrlSrc = urlMatch[0];
+                }
+                let taskId = result.id || result.task_id || result.request_id || "";
+
+                if (mediaUrlSrc) {
+                    currentGeneratedMediaUrl = mediaUrlSrc; 
+                    vOutput.innerHTML = `<div style="width:100%; display:flex; flex-direction:column; align-items:center; gap:12px;">${renderMedia(mediaUrlSrc, videoModel)}<div style="font-size:11px; color:#10b981;">✔ 全量媒体渲染成功！</div></div>`;
+                } else if (taskId && !mediaUrlSrc) {
+                    vOutput.innerHTML = `<div style="width:100%; font-size:13px;"><div style="color:#f59e0b;">✔ 任务派发成功！ID: ${taskId}</div><div id="polling-status" style="color:#00f0ff; margin-top:10px; font-weight:bold;">正在云端异步渲染融合中... ⏳</div></div>`;
+                    let pollCount = 0;
+                    let checkInterval = setInterval(async () => {
+                        pollCount++; if (pollCount > 60) { clearInterval(checkInterval); return; }
+                        try {
+                            let pollUrl = videoUrl.includes('/generations') ? videoUrl.replace('/generations', `/${taskId}`) : `${videoUrl}/${taskId}`;
+                            let checkRes = await fetch(pollUrl, { method: "GET", headers: { "Authorization": `Bearer ${videoKey}`, "Content-Type": "application/json" } });
+                            if (checkRes.ok) {
+                                let checkData = await checkRes.json();
+                                let finalUrl = checkData.video_url || checkData.image_url || checkData.url || (checkData.video && checkData.video.url) || "";
+                                if (finalUrl) { 
+                                    clearInterval(checkInterval); 
+                                    currentGeneratedMediaUrl = finalUrl; 
+                                    vOutput.innerHTML = `<div style="width:100%; display:flex; flex-direction:column; align-items:center; gap:12px;">${renderMedia(finalUrl, videoModel)}</div>`; 
+                                }
+                            }
+                        } catch (e) {}
+                    }, 5000);
+                } else {
+                    vOutput.innerHTML = `<pre style="background:#000; padding:10px; border-radius:6px; color:#10b981; max-height:200px; overflow:auto;">${JSON.stringify(result, null, 2)}</pre>`;
+                }
+            } catch (e) { vOutput.innerHTML = `<div class="msg-error">[渲染异常] ${e.message}</div>`; }
+        }
+
+        // ================= 🚀 新增：图像生图引擎 =================
+        async function executeImageGeneration() {
+            let scriptPrompt = document.getElementById('imageQueryArea').value.trim();
+            let imageUrl = document.getElementById('api-image-url').value.trim() || document.getElementById('api-main-url').value.trim();
+            let imageModel = document.getElementById('api-image-model').value.trim() || document.getElementById('api-main-model').value.trim();
+            let imageKey = document.getElementById('api-image-key').value.trim() || document.getElementById('api-main-key').value.trim();
+            
+            let aspectSetting = document.getElementById('image-aspect-ratio').value;
+            let formatSetting = document.getElementById('image-format').value;
+            let qualitySetting = document.getElementById('image-quality').value;
+
+            if (!scriptPrompt && assetsMap.image.length === 0) { alert("图像生成提示词不能为空！"); return; }
+            if (!imageUrl || !imageModel || !imageKey) { alert("图像矩阵鉴权配置缺失！"); return; }
+
+            const vOutput = document.getElementById('image-output-area');
+            vOutput.innerHTML = `<div class="msg-sys" style="color:var(--primary);">>> [生图路由] 正在向图像渲染端点发起请求...格式: ${formatSetting}</div>`;
+            appendSysLog(`=== 图像矩阵生成启动 | 格式: ${formatSetting} ===`);
+
+            try {
+                let boundImages = [];
+                assetsMap.image.forEach(asset => {
+                    const handleTag = `@${asset.handle}`;
+                    if (scriptPrompt.includes(handleTag)) {
+                        if (asset.type === 'image' || asset.type === 'video') { boundImages.push(asset.base64); } 
+                    }
+                });
+
+                let payload = {};
+                // 自适应标准 DALL-E / xAI 生图接口
+                if (imageUrl.toLowerCase().includes("image") || imageUrl.toLowerCase().includes("generation") || imageModel.toLowerCase().includes("dall")) {
+                    payload = { model: imageModel, prompt: scriptPrompt };
+                    
+                    // 兼容常规尺寸与特殊参数
+                    if(qualitySetting === '1024x1024') { payload.size = "1024x1024"; } 
+                    else { payload.aspect_ratio = aspectSetting; payload.quality = qualitySetting; }
+                    
+                    // 特殊透传动图/格式参数
+                    payload.output_format = formatSetting.toLowerCase();
+                    if(formatSetting === 'GIF') { payload.is_gif = true; scriptPrompt += " (Generate as an animated GIF loop)"; payload.prompt = scriptPrompt; }
+
+                    if (boundImages.length > 0) { payload.image_url = boundImages[0]; payload.image = boundImages[0]; } // 兼容不同API垫图卡槽
+                } else {
+                    // 如果用的是通用大模型，强制让它返回 Markdown 格式图
+                    payload.model = imageModel;
+                    let mContent = [{ type: "text", text: `[SYSTEM: Generate an image. Format: ${formatSetting}. Aspect: ${aspectSetting}]\n\nUser Request: ${scriptPrompt}` }];
+                    boundImages.forEach(img => mContent.push({ type: "image_url", image_url: { url: img } }));
+                    payload.messages = [{ role: "user", content: mContent }];
+                }
+
+                const response = await fetch(imageUrl, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${imageKey}` }, body: JSON.stringify(payload) });
+                if (!response.ok) { const errText = await response.text(); throw new Error(`渲染网关阻断: ${response.status} - ${errText.substring(0, 100)}`); }
+                
+                const result = await response.json();
+                
+                // 深度解析常见的图像 URL 嵌套结构
+                let parsedImageUrl = result.image_url || result.url || (result.data && result.data[0]?.url) || (result.images && result.images[0]?.url) || "";
+                
+                if (!parsedImageUrl && result.choices && result.choices[0]?.message?.content) {
+                    let content = result.choices[0].message.content; let urlMatch = content.match(/https?:\/\/[^\s"')]+/); 
+                    if (urlMatch) parsedImageUrl = urlMatch[0];
+                }
+
+                if (parsedImageUrl) {
+                    currentGeneratedImageUrl = parsedImageUrl; 
+                    vOutput.innerHTML = `<div style="width:100%; display:flex; flex-direction:column; align-items:center; gap:12px;"><img src="${parsedImageUrl}" style="max-width:100%; max-height:350px; border-radius:8px; border:1px solid var(--primary); box-shadow:0 0 20px rgba(0,240,255,0.3);"><div style="font-size:11px; color:#10b981;">✔ 图像/动图渲染完成！</div></div>`;
+                } else {
+                    vOutput.innerHTML = `<pre style="background:#000; padding:10px; border-radius:6px; color:#10b981; max-height:200px; overflow:auto;">[未找到直链, 返回报文]\n${JSON.stringify(result, null, 2)}</pre>`;
+                }
+            } catch (e) { vOutput.innerHTML = `<div class="msg-error">[渲染异常] ${e.message}</div>`; }
+        }
+    </script>
+</body>
+</html>
